@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTM — Unit Database</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0c;
+  --bg2: #111114;
+  --bg3: #18181d;
+  --bg4: #1f1f26;
+  --border: rgba(255,255,255,0.07);
+  --border-hover: rgba(255,255,255,0.15);
+  --text: #e8e8ec;
+  --text-muted: #6b6b78;
+  --text-dim: #3a3a45;
+  --accent: #c8ff00;
+  --accent-dim: rgba(200,255,0,0.12);
+
+  /* Element colors */
+  --aegis:  #4fc3f7;
+  --blitz:  #ffca28;
+  --mystic: #ce93d8;
+  --origin: #80cbc4;
+  --ruin:   #ff7043;
+  --veil:   #a5d6a7;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,10,12,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.logo span {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  margin-left: 0.75rem;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 280px;
+}
+
+.search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+#search {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  padding: 7px 12px 7px 34px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#search::placeholder { color: var(--text-muted); }
+#search:focus { border-color: var(--border-hover); }
+
+.pill-group {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.pill:hover { border-color: var(--border-hover); color: var(--text); }
+.pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.view-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+}
+.view-btn:hover { color: var(--text); background: var(--bg3); }
+.view-btn.active { color: var(--accent); background: var(--accent-dim); }
+
+/* ── MAIN ── */
+main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.results-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.06em;
+}
+.results-meta span { color: var(--text-muted); }
+
+/* ── GRID VIEW ── */
+#grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.unit-card {
+  background: var(--bg2);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3/4;
+  display: flex;
+  flex-direction: column;
+}
+.unit-card:hover { background: var(--bg3); }
+
+.card-img {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.unit-card:hover .card-img img { transform: scale(1.04); }
+
+.card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--bg4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.card-gradient {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(10,10,12,0.95) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.card-info {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 10px 12px 12px;
+}
+
+.card-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.card-role {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.card-badges {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.badge-element {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.badge-type {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.07);
+  color: var(--text-muted);
+}
+
+/* ── LIST VIEW ── */
+#list-view {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.list-header {
+  display: grid;
+  grid-template-columns: 200px 1fr 70px 70px 70px 70px 70px 70px 90px;
+  gap: 0;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+
+.list-col-head {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.list-col-head:hover { color: var(--text); }
+.list-col-head.sorted { color: var(--accent); }
+.list-col-head:not(:first-child) { justify-content: flex-end; }
+
+.sort-arrow { opacity: 0.4; font-size: 0.6rem; }
+.list-col-head.sorted .sort-arrow { opacity: 1; }
+
+.list-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 70px 70px 70px 70px 70px 70px 90px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.list-row:last-child { border-bottom: none; }
+.list-row:hover { background: var(--bg3); }
+
+.list-cell {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.list-cell:not(:first-child):not(:nth-child(2)) {
+  justify-content: flex-end;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.list-unit-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.list-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg4);
+}
+.list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+.list-thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-dim);
+}
+
+.list-unit-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.stat-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: flex-end;
+}
+.stat-bar {
+  width: 36px;
+  height: 3px;
+  background: var(--bg4);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--border-hover);
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border-hover);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(16px);
+  transition: transform 0.25s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal-hero {
+  display: flex;
+  gap: 0;
+  height: 260px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px 14px 0 0;
+}
+
+.modal-hero-img {
+  width: 220px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.modal-hero-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.modal-hero-img-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--bg4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--text-dim);
+}
+
+.modal-hero-content {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(135deg, var(--bg3) 0%, var(--bg2) 100%);
+  border-left: 1px solid var(--border);
+}
+
+.modal-element-line {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.modal-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+
+.modal-role {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  font-weight: 300;
+}
+
+.modal-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.modal-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.15s;
+  z-index: 10;
+}
+.modal-close:hover { color: var(--text); border-color: var(--border-hover); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.stat-block {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.stat-block-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.stat-block-val {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+.stat-block-base {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.stat-bars-section {
+  margin-bottom: 1.5rem;
+}
+
+.stat-row-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.stat-row-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  width: 36px;
+  flex-shrink: 0;
+}
+.stat-row-track {
+  flex: 1;
+  height: 5px;
+  background: var(--bg4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.stat-row-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+.stat-row-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  width: 50px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.element-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.element-icon {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+.element-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.element-name-label {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+}
+
+/* ── ELEMENT COLORS ── */
+.el-aegis  { color: var(--aegis);  }
+.el-blitz  { color: var(--blitz);  }
+.el-mystic { color: var(--mystic); }
+.el-origin { color: var(--origin); }
+.el-ruin   { color: var(--ruin);   }
+.el-veil   { color: var(--veil);   }
+
+.bg-aegis  { background: rgba(79,195,247,0.12);  border-color: rgba(79,195,247,0.25);  }
+.bg-blitz  { background: rgba(255,202,40,0.12);  border-color: rgba(255,202,40,0.25);  }
+.bg-mystic { background: rgba(206,147,216,0.12); border-color: rgba(206,147,216,0.25); }
+.bg-origin { background: rgba(128,203,196,0.12); border-color: rgba(128,203,196,0.25); }
+.bg-ruin   { background: rgba(255,112,67,0.12);  border-color: rgba(255,112,67,0.25);  }
+.bg-veil   { background: rgba(165,214,167,0.12); border-color: rgba(165,214,167,0.25); }
+
+.icon-aegis  { background: rgba(79,195,247,0.18);  color: var(--aegis);  }
+.icon-blitz  { background: rgba(255,202,40,0.18);  color: var(--blitz);  }
+.icon-mystic { background: rgba(206,147,216,0.18); color: var(--mystic); }
+.icon-origin { background: rgba(128,203,196,0.18); color: var(--origin); }
+.icon-ruin   { background: rgba(255,112,67,0.18);  color: var(--ruin);   }
+.icon-veil   { background: rgba(165,214,167,0.18); color: var(--veil);   }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-dim);
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2rem;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.unit-card, .list-row {
+  animation: fadeUp 0.3s ease both;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+
+.kit-section { margin-top: 1.5rem; }
+.kit-list { display: grid; gap: 10px; }
+.kit-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.kit-item-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+.kit-item-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.kit-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--text-dim);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  header { padding: 0 1rem; }
+  main { padding: 1rem; }
+  #grid-view { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .list-header, .list-row {
+    grid-template-columns: 160px 1fr 55px 55px 55px 55px 55px 55px 70px;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-hero { height: auto; flex-direction: column; }
+  .modal-hero-img { width: 100%; height: 200px; }
+  .modal-hero-content { border-left: none; border-top: 1px solid var(--border); }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .list-header, .list-row {
+    grid-template-columns: 130px 1fr 50px 50px 50px 50px 50px 50px 60px;
+  }
+  .list-col-head, .list-cell { padding: 8px 6px; font-size: 0.65rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">DTM <span>UNIT DATABASE</span></div>
+  <div class="header-controls">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="Search units..." autocomplete="off">
+    </div>
+    <div class="pill-group" id="filter-pills">
+      <button class="pill active" data-filter="all">ALL</button>
+      <button class="pill" data-filter="phys">PHYS</button>
+      <button class="pill" data-filter="mgc">MGC</button>
+      <button class="pill" data-filter="mix">MIXED</button>
+      <button class="pill" data-filter="tank">TANK</button>
+      <button class="pill" data-filter="sup">SUPPORT</button>
+      <button class="pill el-aegis"  data-filter="Aegis">AEGIS</button>
+      <button class="pill el-blitz"  data-filter="Blitz">BLITZ</button>
+      <button class="pill el-mystic" data-filter="Mystic">MYSTIC</button>
+      <button class="pill el-origin" data-filter="Origin">ORIGIN</button>
+      <button class="pill el-ruin"   data-filter="Ruin">RUIN</button>
+      <button class="pill el-veil"   data-filter="Veil">VEIL</button>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-grid" title="Grid view">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </button>
+      <button class="view-btn" id="btn-list" title="List view">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="results-meta" id="results-meta"></div>
+  <div id="grid-view"></div>
+  <div id="list-view" style="display:none"></div>
+</main>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modal-close">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+const IMG_BASE = 'https://raw.githubusercontent.com/Ilkar5501/dtmdbwebview/refs/heads/main/';
+function buildImgUrl(filename) {
+  return IMG_BASE + encodeURIComponent(filename);
+}
+const UNIT_KITS = {"Abdullah": [["Passive Ability", "Whenever this card damages an enemy, apply Burn to that enemy for 2 turns. Whenever an enemy takes damage from Burn, increase that damage by 3% of that enemy’s max HP."], ["Burn", "Deals damage equal to 20% of applier’s ATK at start of turn and reduces ATK by 10%."], ["Hands Rated Halal", "This card’s attacks deal +100% MGC instead. When this card attacks an enemy afflicted with Burn, immediately perform a follow-up attack and then trigger the Burn damage without reducing its cooldown."], ["City Tax", "While this card is active, enemies with Burn have their MR reduced by 15%."], ["Big B Shows Off the Big D", "3 turn cooldown; Deal +100% MGC to all enemies. If an enemy is already afflicted with Burn when hit by this attack, this attack becomes a Critical Hit against that enemy."]], "Azula": [["Passive", "At the end of each turn all other cards take damage equal to 2% of their max HP."], ["The Greatest Kindness", "Whenever this card damages an ally, grants that ally +3% to all stats until the end of their next turn."], ["Whiplash", "Deal +80% MGC to 1 enemy. This attack has a +55% chance to move the enemy to the Rearguard if it was in the Vanguard or vice versa. If an enemy is moved by this effect, apply Confusion to that enemy and reduce its SPD by 15% for 1 turn."], ["Confusion", "This unit has a 33% chance to attack itself or an ally when it attacks."], ["Departure from a Dream", "5 turn cooldown; Deal +400% MGC to a single target. For each time that enemy has been repositioned, this attack deals +50% more Damage Inflicted. If the target is currently in a different position when hit than the one it started in, this attack cannot be evaded and ignores Damage Reduction. This ability's cooldown is reduced by 1 each time an enemy is repositioned (minimum 1 turn). When this ability defeats an enemy its cooldown is reduced by 1 turn."]], "Berserk": [["Senor Autismo", "At the start of the battle, activate Aura Field for 3 turns. While Aura Field is active, its effects are granted to all Aegis allies and enemies for 3 turns even if this card is defeated."], ["Aura Field", "Aegis units gain +30% Damage Inflicted. Additionally they cannot be stunned."], ["Master’s Wrath", "This card’s attacks deal +100% MGC instead. While Aura Field is active, these attacks ignore 20% of the enemy’s Damage Reduction."], ["Demon of Nailong", "4 turn cooldown; Reactivate Aura Field for 3 turns, then deal +150% MGC to 1 enemy."]], "Blutsx": [["Passive Ability", "Restores 2% of max HP each time a Shield is broken."], ["Blessing of the Trinitaria", "At the start of the battle, and every other one of this card’s turns, attach 1 Blessing of Belief to 1 ally. When a Blessing of Belief is attached to an ally, it grants a shield to that ally equal to 30% of this card’s max HP. At the start of the 4th turn after Blessing of Belief is applied, and every 4 turns thereafter, reapply this shield. Allies cannot have more than 1 Blessing of Belief."], ["Greatest Rival", "This card’s attacks have a 20% chance to apply Taunt on the enemy it attacks, and when attacked it has a 20% chance to apply Taunt on that enemy, both until the end of the enemy’s next turn. These chances are increased by +1% for every 1% HP this card is missing (max. 100%)."], ["Taunt", "This card must attack the applier if able."], ["Reckless Drive", "For every 1% missing HP this card gains +1% ATK and +0.5% AR/MR."], ["A Page out of Sasuke’s Book", "5 turn cooldown; Cannot attack during the first turn, instead charges for 1 turn gaining +25% Damage Reduction and moving all enemies to the Vanguard. Applies Grouped on enemies moved this way. On turn 2, deals damage to all enemies equal to 25% of this card’s max HP + 50% ATK."], ["Grouped", "+15% Damage Taken by the card that applied it for each ally that shares this card’s position."]], "Chinatsu": [["Passive Ability", "At the start of battle, this card moves to the Rearguard. While in the Rearguard this card gains +25% Critical Chance and +50% Critical Damage."], ["Toothless Powers", "Every other turn this card replaces its technique with a Mystery Man Technique."], ["Ascendant Mastery", "Gain +100% ATK, 25% Critical Chance, and +25% Critical Damage for 2 turns, and this card’s attacks ignore 20% of enemy Damage Reduction."], ["Covert Operations", "Gain 15% Damage Reduction and restore 8% max HP for 2 turns."], ["Smurf Aura", "Cast Smurf Aura at the enemy with the highest HP; it applies Stun for 1 turn."], ["Terms of Service - Child’s Play", "Whenever this card lands a Critical Hit, inflicts Bleed dealing 100% of its Damage Inflicted and increases this card’s DMG by 10% (max. 50%)."]], "Cryselle": [["Passive Ability", "Before this card attacks, deal damage equal to 10% MGC to all enemies. This effect is not an attack and cannot be evaded. If this effect deals damage, this card gains +20% Damage Reduction against enemy attacks until the end of the turn."], ["Milk Needs Cookies", "This card’s attacks always strike twice, dealing total damage equal to +70% MGC. These hits cannot trigger follow-up attacks."], ["CrysL Theory", "When this card attacks, if its HP is above 50%, gain +20% MGC until the end of the turn. Additionally, this card gains +10% Critical Chance for each buff currently active on it (max. 5)."], ["Legacy’s Weight", "Every 4th attack, increase this card’s damage by +70% MGC and apply Cleave and Spirit Break on all enemies for 2 turns."], ["Cleave", "Reduce this card’s AR by 20%."], ["Spirit Break", "Reduce this card’s MR by 20%."]], "Fearan": [["Passive Ability", "This card gains +15% Critical Chance while at least one of its summons is not defeated."], ["Armada of the Feared", "At the start of battle, this card summons Mega Gallade, Mega Froslass, and Bisharp."], ["Mega Gallade", "Each attack cycles through 2 Pokémon moves: Close Combat deals +120% ATK; Psycho Cut deals +60% ATK and gains +10% Critical Chance."], ["Mega Froslass", "Each attack cycles through 2 Pokémon moves: Icy Wind deals +50% MGC to all enemies and inflicts Frozen for 2 turns; Hex deals +60% MGC, or +120% MGC if the enemy has a negative status effect."], ["Bisharp", "If a negative status effect is applied to an ally, gains +25% ATK. Once per turn, if an enemy targets an ally with an attack or makes an AoE attack, there is a chance = x% (x = 100% / # of enemies) for this card to attack first, dealing 70% ATK."], ["Spirit Thief", "Whenever this card attacks, steal 2% of that card’s ATK, MGC, AR, and MR for the rest of the battle. If the target is marked by this card, double the amount of stats stolen."], ["Master of Myth", "After 4 turns or when this card falls below 50% HP, activate Shrike."], ["Shrike", "While Shrike is active, this card and its summons ignore 30% Damage Reduction and this card gains +15% Critical Damage."], ["Taste Their Fear", "Deals +100% ATK, marking that enemy. Marked enemies are targeted by this card’s summons."]], "Formal": [["Passive Ability", "Gain +25% Critical Damage."], ["I Came From Elite, Could You Tell?", "When this card is attacked, if its SPD is greater than the opponent’s, this takes +1% less damage for every 20 more SPD it has than the opponent (max. 40%)."], ["Working Life Ranker", "When this card attacks an enemy, if its SPD minus the enemy’s SPD is at least 500, it performs a follow-up attack immediately after. Additionally, if its SPD is greater than the enemy’s, it gains +1% Critical Chance for every 50 SPD difference."], ["You Might Be Tuff but I’m Tuffer", "Every 3rd attack, this card restores HP equal to 30% of damage dealt."]], "GameOver & Neos": [["Passive", "+25% Critical Chance."], ["Brotherly Duo", "This card counts as two separate units in battle, each with its own HP (100% of the base value)."], ["Amp Up Tactics", "Whenever GameOver or Neos land a Critical Hit, their next turn’s attacks are replaced by Relentless Techniques."], ["Sighting", "The first of the two to act applies an uncleansable Focus Mark on the enemy with the lowest HP% until the end of the turn and increases the other’s Critical Chance by +60% against that enemy until the end of the turn. Excess Critical Chance is converted into Critical Damage at a ratio of 100%."], ["Sniper Shot", "The second of the two to act attacks the enemy with Focus Mark dealing +250% ATK."], ["Follow Fire", "If Sniper Shot lands a Critical Hit, the first of the two to act performs a follow-up attack on the same enemy dealing +100% ATK with a 40% chance to inflict Cleave for 2 turns."]], "James": [["Passive Ability", "+25% Critical Chance. All of this card’s abilities can become Critical, and if they do, any values listed as part of that ability are increased by the Critical Damage multiplier (x = 1.5 + Critical Damage)."], ["The Goat Amongst Whales", "At the start of each turn, set this card’s HP, ATK, AR, MGC, MR, and SPD to 20% higher than the strongest card on the field. For each stat higher than its original stat, increase this card’s HP by +25%. If this card is already the strongest, gain +25% Critical Chance instead."], ["Soothing Serenade", "The first time an enemy hits this card each turn, reduce the damage taken by 50%. If an enemy evades an attack, gain +25% Critical Chance (max. 3 stacks). Restore 5% max HP each turn. Each time this card performs a Critical action that is not an attack, heal all allies for 5% of their max HP."], ["Golden Shower", "3 turn cooldown; Deals ATK or MGC damage (whichever is higher) equal to 35% of this card’s max HP to all enemies, and applies Frozen for 2 turns. For each enemy this lands a Critical hit against, apply Cleave for 2 turns and this card gains +5% Critical Damage."]], "Lala": [["Passive Ability", "This card’s attacks inflict Outrage on enemies that are damaged."], ["Outrage", "After this card takes damage 5 times, trigger a blast that deals 50% of the inflictor’s MGC as damage to all allies in the same position (Vanguard or Rearguard) as this card."], ["Suna’s Defiance", "This card’s attacks deal 80% MGC instead. Whenever this card attacks, perform a follow-up hit on a random enemy."], ["Jungle Empress", "When attacking, if a target is afflicted with Outrage, inflicts Bleed (50% MGC) for 2 turns. When taking a hit, if the attacker is afflicted with Outrage, this card has a 70% chance of counterattacking, but this attack does not trigger a follow-up attack."], ["Bentley’s Rampage", "3 turn cooldown; Attacks all enemies 3 times, dealing 80% MGC each time. Each attack has a 10% chance to silence each enemy struck. These attacks do not trigger follow-up attacks."]], "Legit": [["Passive Ability", "Whenever this card is attacked it gains +15% ATK/AR/MR until the end of that battle. Also, whenever this card is attacked or attacks it gains 1 stack of Last Laugh."], ["That’s It?", "Whenever this card is attacked, it immediately performs a counter attack against the attacker dealing +100% ATK."], ["Let It Ride", "When this card defeats an enemy, restore 25% of its max HP."], ["Mita Kayol’s Last Laugh", "If this card has 3 stacks of Last Laugh, its attack instead deals +150% ATK and ignores 80% of that enemy’s AR. This attack consumes all stacks of Last Laugh."]], "Poyo": [["Passive Ability", "If an enemy is defeated by this card it stores a Soul (max. 1). When this card is defeated, if a Soul is stored, revive this card with 35% of its max HP."], ["The Wind", "Whenever this card attacks an enemy it applies Mark of the Wind to that enemy. After applying 3 Marks of the Wind to an enemy, all 3 are converted into the uncleansable status effect Sana’s Trance. This card cannot attack other enemies while an enemy has Mark of the Wind or Sana’s Trance."], ["Mark of the Wind", "Reduces this card’s SPD and Damage Inflicted by 25%. Does not stack."], ["Young, Smart, and Dreaming", "When this card defeats an enemy with Sana’s Trance, immediately applies Sana’s Trance to another enemy."], ["Smash", "This card’s attacks deal +70% MGC, or if the enemy has Sana’s Trance instantly kills the enemy."]], "Raiden": [["Passive Ability", "Allied cards afflicted with Charge gain +10% SPD and reduce the duration of negative status effects applied to them by 1 turn (min. 1 turn)."], ["Oath of the Sealed", "Each attack cycles through Talisman Techniques."], ["Energy Tempest", "Deal +40% MGC to all enemies and apply Spirit Break to them for 2 turns."], ["Spirit Break", "Reduce this card’s MR by 20%."], ["Lethality Amp", "Deal +40% MGC to all enemies and grant Charge to all allies for 2 turns."], ["Charge", "The next time this card attacks, after that attack resolves this effect is consumed and the applier performs a follow-up attack against the same enemy dealing +40% MGC."], ["Heaven’s Current", "4 turn cooldown; Instead of a Talisman Technique, unleash this attack dealing +70% MGC to all enemies. Then, this card applies Burn to each enemy afflicted with Spirit Break."]], "Renegade": [["Passive Ability", "While in the Vanguard this card gains 100% lifesteal."], ["Her Shield", "When allied with Woobi this card gains +25% ATK and +25% AR."], ["Tuff As Hell", "Each of this card’s attacks apply Fissure, increasing damage taken by 3% per stack (max. 5 per foe). Each time this card attacks, gain +10% ATK (stacks up to 50%)."], ["Stand Behind Me", "Once per turn, if an enemy targets an ally with an attack or makes an AoE attack, there is a chance = x% (x = 100% / # of enemies) to redirect it to this card and reduce its damage by 10% prior to DR. For each attack redirected this way, gain +10% AR and +10% MR (max. 5 stacks). The chance to redirect is increased by x% each time an enemy’s attack is not redirected, until the end of the turn. If an enemy’s attack is redirected, increase all allies’ ATK, AR, MGC, MR, SPD, CRT Chance, and CRT DMG by 5% until the end of the turn."]], "Rithy": [["Do You Even fw Me?", "When an enemy gains a buff, apply Fear on that enemy for 2 turns. This card’s attacks prioritize enemies with Fear."], ["Fear", "This card deals 10% less damage."], ["I’ll See You at SR6", "When attacking this card has a +70% chance to dispel a buff from that enemy. If the enemy is afflicted with Fear, this card’s attacks have a +100% chance to dispel a buff instead and the Fear debuff is removed immediately after. If this card dispels a buff with its attack, it immediately performs a follow-up attack. This card cannot perform more than one follow-up attack."], ["W Rithy", "When this card dispels a buff, gains +50% Critical Chance and +25% ATK and cannot be debuffed until the end of the next turn."], ["Team Rithy", "4 turn cooldown; Deals +60% ATK to all enemies and apply Cleave for 2 turns, then if this attack lands on a shielded enemy, repeat this effect again (cannot be recast more than once). Against shielded foes, this attack also applies Fear."]], "Saturn": [["Diancie’s Gift", "At the start of battle, this card summons Diancie."], ["Diancie", "Moonblast deals +80% MGC to 1 enemy with a 30% chance to inflict -20% MGC for 1 turn. While Diancie is present, negative status effects that would be applied to Saturn instead grant it +1% Evasion for their original duration."], ["Trials of the Fae", "This card gains +25% Evasion (max. 50%). Whenever this card takes damage from an enemy’s attack, it gains +5% Evasion and +5% Damage Reduction for 1 turn."], ["Student’s Journey", "At the start of the battle, this card gains +5% MGC and +5% SPD for each ally with higher stats than this card. Whenever this card dodges an attack, it gains a Success stack (max. 5) and immediately performs a counter attack against the attacker dealing damage equal to the number of its Success stacks × 20% MGC."], ["Mayari’s Eclipse", "When this card reaches 5 Success stacks it deals 250% MGC to all enemies and consumes all Success stacks immediately after. If this attack defeats an enemy, this card gains +25% AR/MR."]], "Shmeargle": [["Passive Ability", "If this card defeats an enemy, it gains +25% Critical Chance."], ["Hardened Scales", "Whenever this card takes a Critical Hit, gain 1 stack of Scale Harden (max. 5). Each stack reduces damage taken from Critical Hits by 5%. When this card attacks while at max stacks, consume all stacks and heal for 30% of damage dealt."], ["Nepo Chan", "Each attack cycles through Draconic Techniques."], ["Rainbow Rush", "Deals +80% ATK to all enemies, moves all enemies in the Vanguard to the Rearguard, and reduces their Evasion by 20% until the end of their next turn. If no enemies are in the Vanguard, instead reduce the SPD of all enemies in the Rearguard by 20% until the end of their next turn."], ["Dragon’s Maw", "Deals 100% MGC to all enemies in either the Vanguard or the Rearguard (whichever has more) and applies Burn to all enemies for 2 turns."], ["Divine Dance", "Gain +20% ATK, MGC, and SPD."], ["Supreme Empress of the Skies", "When this card uses Rainbow Rush it gains +15% Evasion until the end of that turn. When this card uses Dragon’s Maw it gains +50% Damage Reduction until the end of that turn."], ["Typhoon of Fate", "At the start of the battle, if there are more than 4 enemies (including summons), deal damage to all enemies equal to +25% ATK + 25% MGC and apply Frozen to all enemies for 2 turns."]], "Starolyz": [["Passive Ability", "At the start of each of Starolyz’s turns, reveal the top card of her 8-card deck (4 Hearts, 4 Spades), then shuffle it back into the deck."], ["Heart", "Heal the ally with the lowest HP% equal to 5% of Starolyz’s Max HP."], ["Spade", "Apply -10% Damage Dealt to 1 random enemy until the end of their next turn."], ["Cardcaptor", "Reveal the top 2 cards of the deck. 2 Hearts: heal the ally with the lowest HP% equal to 10% of Max HP. 2 Spades: apply -10% ATK/MGC/SPD to 1 random enemy until the end of their next turn. No Match: store 1 random revealed card, place the other on the top or bottom of the deck, and gain a shield equal to 20% of Starolyz’s Max HP until the end of her next turn."], ["Boba Boost", "Starolyz can hold 1 card at a time. If Starolyz is holding a card and reveals a matching type via her Passive, the Passive effect is doubled. If Starolyz is holding a card when she uses an ability, that card is included in the reveal and then shuffled into the deck."], ["Star Burst", "3 turn cooldown; Reveal the top 4 cards of the deck. Based on the number of matching cards revealed, Star Burst can heal, cleanse, buff allies, silence enemies, or apply teamwide debuffs. Exactly 4 Hearts heals all allies for 25% Max HP and removes all non-ally effects. Exactly 4 Spades applies -25% ATK/MGC/SPD to all enemies until the end of their next turn."]], "Stitch": [["Passive Ability", "+10% Critical Chance. Whenever this card lands a Critical Hit it has a +70% chance to apply Poison for 3 turns to that enemy. If this card applies Poison to an enemy that is already poisoned, refresh the duration."], ["Poison", "At the end of each turn, takes damage equal to 2% of this card’s max HP. While Poisoned, cannot restore HP."], ["Captain’s Right Hand", "If this card or an ally lands a Critical Hit, gains 1 stack of Takeover. Each stack of Takeover grants +15% Critical Chance, +5% SPD, and +2% Damage Reduction (max. 9 stacks). Excess Critical Chance is converted into Critical Damage at a ratio of 100%."], ["Dawn of a New Era", "Whenever this card lands a Critical Hit, reduce the Critical Chance of all enemies by 5%."], ["Sword of Atlanta", "2 turn cooldown; Strike all enemies once, dealing 100% ATK. For each enemy this lands a Critical Hit on, grant all allies +5% Damage Reduction against Critical Hits until the end of their next turn."]], "Toe": [["Passive Ability", "This card builds a Disappearing Act gauge during combat; at the end of every turn increase the gauge by 10%; when the gauge reaches 100%, this card is automatically defeated."], ["A Milk a Day Keeps the Doctor Away", "At the start of the battle gain +5% to all stats for each enemy. At the start of each turn, restore 20% max HP permanently each turn and cleanse all status ailments, negative status effects, and stuns."], ["Usurper of the Old Era", "At the start of the battle apply a Stun for 1 turn to all cards whose total stats are not greater than or equal to 80% of this card's stat total, or that do not have a Milk Club tag. After 1 turn, activate New Era."], ["New Era", "While New Era is active, this card has +50% Damage Reduction against Ultimate abilities and AoE damage. At the end of each turn, increase the gauge by 5%."], ["Trials of Toe", "Each attack cycles through Ten Toes Down Techniques; all techniques have a 33% chance to misfire, which increases the gauge by 10%."], ["Hog Whisper", "Deals 40% ATK to all enemies in the Rearguard, or if no units are in the Rearguard, all enemies in the Vanguard instead, and inflicts Grouped on them. This moves any enemies hit in the Rearguard to the Vanguard and this card performs a follow-up attack dealing 60% ATK to an enemy in the Vanguard. On misfire, it hits 1 random enemy instead, reduces that enemy's SPD by 30% for 1 turn, and no follow-up occurs."], ["Blazed Goon", "Deals 160% ATK to all enemies in the Vanguard, or if no units are in the Vanguard, all enemies in the Rearguard instead. Each enemy hit has a 50% chance to be moved. On misfire, this deals 80% ATK to all enemies instead and applies Bleed equal to 20% ATK for 2 turns."], ["I’m Still Him", "Every 3rd cycle, deal 120% ATK + 20% of the target’s Max HP to the enemy with the highest HP. On misfire, hit a random enemy for 80% ATK + 10% Max HP, increase the gauge by 5%, and this has an 80% chance to end New Era."]], "Tubbs": [["Mori’s Restoration", "All healing done by this card is increased by the target’s % missing health."], ["The Ultimate Guessing Game", "If this card is in the Vanguard, gain +20% Evasion."], ["Daily Support", "At the start of this card’s turn, heal the ally with the lowest HP% for 100% ATK."], ["Frivolous Fervor", "4 turn cooldown; Heal all allies for 100% ATK, and if you do, grant them a shield equal to 100% of this card’s ATK for 3 turns."]], "Viri": [["Passive Ability", "This card can maintain up to 1 allied Action and 1 enemy Action at a time. Actions do not decrease in duration and remain until triggered, replaced, or the afflicted card is defeated."], ["Friends Give & Friends Take", "Each attack cycles through Friend & Foe Actions."], ["Helping Hand", "Deal +50% MGC to 1 enemy, then apply Helping Action to the allied card with the lowest HP%."], ["Helping Action", "The next time this card would fall below 50% HP, before damage resolves reduce that damage by 30%, cleanse 1 negative status effect from this card, and restore HP equal to 12% of this card’s max HP. Then remove Helping Action."], ["Ruining Reversal", "Deal +50% MGC to 1 enemy, then apply Ruining Action to the enemy with the highest ATK or MGC."], ["Ruining Action", "The next time this card uses an ability or ultimate, after that action resolves deal +50% of the applier’s MGC to this card and apply Silence for 1 turn. Then remove Ruining Action."], ["Calamari Boost", "Whenever an allied Helping Action and an enemy Ruining Action are both triggered in the same round, this card gains +20% MGC and +20% SPD until the end of its next turn."], ["Tiny Town Tussling", "4 turn cooldown; Restore 20% of this card’s max HP, then if no enemies have a Ruining Action, apply Ruining Action to the enemy with the highest HP. If all enemies have a Ruining Action, instead apply Tiny Town to all allies until the end of their next turn."], ["Tiny Town", "This card’s attacks reduce the enemy’s SPD by 10%."]], "Wabbit": [["Blue Light Excitation", "Every turn grant +6% Damage Reduction, +5% Critical Chance, +1% Critical Damage, and +1% in all stats to all allies (max. 5 stacks)."], ["Ten Wives Technique", "This card does not take up a team slot and is not counted towards team size or class limits when allied with any card with the Girls tag, and gains +33% Evasion if allied with a card with the Girls tag."], ["Captain’s Call", "When an ally drops to or below 50% HP, grant 1 Shield (1 HP) and +10% Damage Inflicted (this can only trigger once per ally)."]], "Wargrass": [["Light Superiority", "When this card enters combat, grant all allies Delusion for 3 turns."], ["Delusion", "Whenever this card attacks an enemy, increase the Damage Inflicted by that attack by 25%, and if you do, this card loses 8% of its max HP."], ["A Word to the Wise", "This card does not take up a team slot and is not counted towards team size or class limits when allied with any card with the Guys tag. If this card is attacked, mark that enemy with Sharp Retort until the end of the turn."], ["Sharp Retort", "All enemies that would target a random enemy target this card instead."], ["Freaky Dimension", "3 turn cooldown; Grants all allies +10% AR/MR for 1 turn, then during the next turn, if the total SPD of this card’s team is lower than the enemy’s, this card inverts the turn order allowing the unit with the lowest SPD to go first and vice versa. Otherwise it doubles the SPD of all allies for 1 turn."]], "Woobi": [["Passive Ability", "When attacking an enemy with SPD less than this card’s, gain +30% Critical Chance."], ["His Sword", "When allied with Renegade this card gains +25% MGC and +25% SPD."], ["Twin Peaks", "Whenever this card lands a Critical Hit, it has a 100% chance to cast Feeling Woobiful 1 time on that enemy. After casting, the chance of triggering the next cast reduces to 70% of the current chance."], ["Feeling Woobiful", "Deals 100% MGC to 1 enemy. If this is a Critical Hit, this card gains +10% Damage Reduction for 1 turn (doesn’t stack). This skill has no cooldown."], ["Matcha Garden", "3 turn cooldown; Cleanse all of this card’s status ailments, negative status effects, and stuns, then gain +30% Critical Chance for 2 turns, then attack 3 random enemies once each dealing 40% MGC."]], "Yaozers": [["Passive", "When Yaozers performs a Physical Attack, he gains 1 stack of Overachiever (max. 4), increasing his ATK/AR by 3% and healing himself and all allied units for 2.5% of his max HP for each stack."], ["He Who Strikes Above", "If any allied cards have higher stats than this card, it gains +5% to that stat for every 50 point difference (max. 25% per stat)."], ["Hi I’m Yaozers", "When 1 allied unit is attacked by a foe, Yaozers consumes 1 stack of Overachiever to attack that foe for 100% of his ATK. If he has 4 stacks of Overachiever he also heals for 5% of his max HP."], ["On Yao’s Life", "5 turn cooldown; If an allied unit is dead, Yaozers sacrifices 50% of his current HP to revive all dead allies, restoring HP to each ally equal to the HP Yaozers sacrificed."]], "Zebulous": [["Passive", "Whenever this card deals damage to a foe it has a 60% chance to apply 1 negative status effect to that foe. The effect applied prioritizes a new status if possible."], ["Bleed", "3 turns; Deals damage equal to 50% of damage inflicted at start of turn."], ["Frozen", "2 turns; Deal damage equal to 5% of target’s Max HP when applied and reduce SPD by 15%."], ["Burn", "2 turns; Deals damage equal to 20% of applier’s ATK at start of turn and reduces ATK by 10%."], ["Cleave", "2 turns; Reduces armor by 20%."], ["I Got Chills", "If this card applies Frozen on enemies affected by Burn, or Burn on enemies already afflicted with Frozen, consume 1 stack of each and apply Frozen Flame."], ["Frozen Flame", "Persistent; Reduces ATK, AR, MGC, MR, and SPD by 5%, deals damage equal to 10% of foe’s max HP, and reduces foe’s max HP by 10%."], ["Vice Captain of the Elite", "This card alternates between Serenity Strike and Phantom Barrage."], ["Serenity Strike", "Strike all enemies, dealing damage equal to 240% ATK ÷ number of enemies to each enemy."], ["Phantom Barrage", "Strike 1 enemy 4 times. Each hit deals 30% ATK."], ["Legendary Knight’s Whirlwind", "4 turn cooldown; If the total number of negative status effects across all enemies is at least 4, strike all enemies, deal 150% ATK to all enemies and inflict Bleed equal to 60% of damage dealt for 1 turn. Then all enemies with 3 or more negative status effects are stunned for 2 turns."]], "Zoro": [["Kit status", "Kit text was not available in the extracted document export I could read from your link. The card is still included in the database, and you can paste the final Zoro kit into UNIT_KITS['Zoro'] later if needed."]]};
+
+const ELEMENT_DATA = {
+  Aegis:  { effect: 'The first time this unit takes damage each round, reduce that damage by 5%.' },
+  Blitz:  { effect: 'If this unit has not taken damage this round, its attacks deal an additional +5% damage.' },
+  Mystic: { effect: 'Whenever an enemy is defeated, this unit gains +5% ATK/MGC until the end of its next turn.' },
+  Origin: { effect: 'The first time this unit acts each turn, restore 2% of max HP to the ally with the lowest HP%.' },
+  Ruin:   { effect: 'This unit deals +10% more damage to enemies below 50% HP.' },
+  Veil:   { effect: 'This unit deals +5% more damage to enemies afflicted with a negative status effect.' },
+};
+
+const TYPE_LABEL = { phys:'Phys DPS', mgc:'MGC DPS', mix:'Mixed DPS', tank:'Tank / Bruiser', sup:'Support / Healer' };
+
+const UNITS = [
+  { name:'Abdullah',       img:'M_Abdullah.jpg',        element:'Mystic', type:'mgc',  role:'MGC DPS',                       pos:'Rearguard',  hp:6300, atk:380,  mgc:790, ar:440, mr:540, spd:405 },
+  { name:'Azula',          img:'W_Azula.png',            element:'Veil',   type:'mgc',  role:'MGC Burst / Anti-Tank',          pos:'Vanguard',   hp:5700, atk:340,  mgc:860, ar:390, mr:490, spd:375 },
+  { name:'Berserk',        img:'M_Berserk.jpg',          element:'Mystic', type:'mgc',  role:'MGC DPS / Enabler',              pos:'Vanguard',   hp:6600, atk:410,  mgc:760, ar:470, mr:560, spd:390 },
+  { name:'Blutsx',         img:'M_Blutsx.png',           element:'Aegis',  type:'tank', role:'Phys Bruiser / Support Tank',    pos:'Vanguard',   hp:8100, atk:690,  mgc:190, ar:700, mr:610, spd:335 },
+  { name:'Chinatsu',       img:'M_Chinatsu.jpg',         element:'Ruin',   type:'phys', role:'Phys Crit Burst DPS',            pos:'Rearguard',  hp:6150, atk:790,  mgc:180, ar:420, mr:370, spd:460 },
+  { name:'Cryselle',       img:'M_Cryselle.png',         element:'Ruin',   type:'mgc',  role:'MGC Crit DPS',                   pos:'Rearguard',  hp:6400, atk:370,  mgc:820, ar:430, mr:530, spd:395 },
+  { name:'Fearan',         img:'M_Fearan.jpg',           element:'Mystic', type:'mix',  role:'Mixed DPS (Phys lean)',          pos:'Vanguard',   hp:6500, atk:700,  mgc:420, ar:460, mr:430, spd:415 },
+  { name:'Formal',         img:'M_Formal.png',           element:'Blitz',  type:'phys', role:'SPD Tank / Phys Crit DPS',       pos:'Vanguard',   hp:7050, atk:660,  mgc:190, ar:590, mr:510, spd:620 },
+  { name:'GameOver & Neos',img:'M_GameOver&Neos.jpg',    element:'Blitz',  type:'phys', role:'Phys Crit DPS (×2 units)',       pos:'Rearguard',  hp:6000, atk:810,  mgc:0,   ar:410, mr:360, spd:455 },
+  { name:'James',          img:'M_James.jpg',            element:'Mystic', type:'mix',  role:'Mixed Crit DPS',                 pos:'Vanguard',   hp:6200, atk:740,  mgc:490, ar:450, mr:460, spd:410 },
+  { name:'Lala',           img:'W_Lala.png',             element:'Ruin',   type:'mgc',  role:'MGC DPS',                        pos:'Vanguard',   hp:6350, atk:360,  mgc:800, ar:430, mr:530, spd:400 },
+  { name:'Legit',          img:'M_Legit.jpg',            element:'Aegis',  type:'tank', role:'Bruiser Phys DPS',               pos:'Vanguard',   hp:7950, atk:720,  mgc:180, ar:690, mr:590, spd:345 },
+  { name:'Poyo',           img:'M_Poyo.jpg',             element:'Ruin',   type:'mgc',  role:'Anti-Tank MGC DPS',              pos:'Rearguard',  hp:5850, atk:330,  mgc:850, ar:400, mr:500, spd:390 },
+  { name:'Raiden',         img:'M_Raiden.jpg',           element:'Mystic', type:'sup',  role:'MGC Sub DPS / Support',          pos:'Rearguard',  hp:6100, atk:390,  mgc:710, ar:480, mr:550, spd:385 },
+  { name:'Renegade',       img:'M_Renegade.png',         element:'Aegis',  type:'tank', role:'Tank / Buffer',                  pos:'Vanguard',   hp:8750, atk:630,  mgc:0,   ar:800, mr:800, spd:330 },
+  { name:'Rithy',          img:'M_Rithy.png',            element:'Veil',   type:'phys', role:'Phys DPS / Anti-Buff',           pos:'Vanguard',   hp:6300, atk:770,  mgc:0,   ar:440, mr:400, spd:430 },
+  { name:'Saturn',         img:'M_Saturn.jpg',           element:'Blitz',  type:'mgc',  role:'MGC DPS / Dodge Tank',           pos:'Rearguard',  hp:6200, atk:350,  mgc:760, ar:510, mr:580, spd:410 },
+  { name:'Shmeargle',      img:'W_Shmeargle.jpg',        element:'Aegis',  type:'mix',  role:'Bruiser / Mixed DPS',            pos:'Vanguard',   hp:7800, atk:660,  mgc:560, ar:650, mr:580, spd:350 },
+  { name:'Starolyz',       img:'W_Starolyz.jpg',         element:'Origin', type:'sup',  role:'Healer / Buffer / Debuffer',     pos:'Rearguard',  hp:7200, atk:580,  mgc:340, ar:530, mr:540, spd:365 },
+  { name:'Stitch',         img:'W_Stitch.jpg',           element:'Veil',   type:'phys', role:'Phys Crit DPS / Debuffer',       pos:'Rearguard',  hp:6100, atk:780,  mgc:0,   ar:430, mr:380, spd:445 },
+  { name:'Toe',            img:'M_Toe.jpg',              element:'Ruin',   type:'tank', role:'Phys Anti-Tank / AoE DPS',       pos:'Vanguard',   hp:8200, atk:750,  mgc:0,   ar:620, mr:520, spd:320 },
+  { name:'Tubbs',          img:'M_Tubbs.png',            element:'Origin', type:'sup',  role:'Pure Healer',                    pos:'Vanguard',   hp:7500, atk:660,  mgc:0,   ar:550, mr:560, spd:360 },
+  { name:'Viri',           img:'W_Viri.jpg',             element:'Veil',   type:'mgc',  role:'MGC DPS / Debuffer',             pos:'Rearguard',  hp:5800, atk:520,  mgc:680, ar:480, mr:520, spd:410 },
+  { name:'Wabbit',         img:'W_Wabbit.jpg',           element:'Origin', type:'sup',  role:'All-in-One Support',             pos:'Flexible',   hp:5600, atk:320,  mgc:380, ar:470, mr:500, spd:395 },
+  { name:'Wargrass',       img:'M_Wargrass.png',         element:'Blitz',  type:'sup',  role:'Trick Room / Dmg Support',       pos:'Flexible',   hp:5500, atk:340,  mgc:440, ar:450, mr:470, spd:375 },
+  { name:'Woobi',          img:'W_Woobi.png',            element:'Mystic', type:'mgc',  role:'MGC Crit DPS',                   pos:'Rearguard',  hp:6000, atk:350,  mgc:830, ar:420, mr:510, spd:430 },
+  { name:'Yaozers',        img:'M_Yaozers.jpg',          element:'Origin', type:'tank', role:'Bulky Bruiser / Heal Support',   pos:'Vanguard',   hp:8000, atk:710,  mgc:0,   ar:670, mr:580, spd:340 },
+  { name:'Zebulous',       img:'M_Zebulous.jpg',         element:'Veil',   type:'phys', role:'Debuffer / Phys DPS',            pos:'Vanguard',   hp:6500, atk:760,  mgc:210, ar:460, mr:420, spd:420 },
+  { name:'Zoro',           img:'M_Zoro.jpg',             element:'Veil',   type:'sup',  role:'Support / MGC Sub DPS',          pos:'Rearguard',  hp:6000, atk:360,  mgc:640, ar:490, mr:530, spd:390 },
+];
+
+const MAX_STATS = { hp:8750, atk:810, mgc:860, ar:800, mr:800, spd:620 };
+const K = 150, DEF_AVG = 530;
+
+function baseVal(x) { return Math.round(x / 1.5 / 5) * 5; }
+function estDmg(u) {
+  const pa = u.atk > 200 ? u.atk*(u.atk/(u.atk+DEF_AVG+K)) : 0;
+  const ma = u.mgc > 200 ? u.mgc*(u.mgc/(u.mgc+DEF_AVG+K)) : 0;
+  return Math.round(Math.max(pa,ma));
+}
+function pct(val, key) { return Math.round(val / MAX_STATS[key] * 100); }
+
+const EL_COLOR = { Aegis:'aegis', Blitz:'blitz', Mystic:'mystic', Origin:'origin', Ruin:'ruin', Veil:'veil' };
+function elClass(el) { return EL_COLOR[el] || ''; }
+
+function imgEl(u) {
+  const src = buildImgUrl(u.img);
+  const initials = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  return `<img src="${src}" alt="${u.name}" onerror="this.parentElement.innerHTML='<div class=\\'card-img-placeholder\\'>${initials}</div>'">`;
+}
+
+function listImgEl(u) {
+  const src = buildImgUrl(u.img);
+  const initials = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  return `<img src="${src}" alt="${u.name}" onerror="this.parentElement.innerHTML='<div class=\\'list-thumb-placeholder\\'>${initials}</div>'">`;
+}
+
+
+function renderKit(name) {
+  const entries = UNIT_KITS[name] || [];
+  if (!entries.length) {
+    return `<div class="kit-item"><div class="kit-item-title">Kit unavailable</div><div class="kit-item-desc">No kit text is currently stored for this unit.</div></div>`;
+  }
+  return `<div class="kit-list">` + entries.map(entry => {
+    const title = Array.isArray(entry) ? entry[0] : 'Kit';
+    const desc = Array.isArray(entry) ? entry[1] : String(entry);
+    return `<div class="kit-item"><div class="kit-item-title">${title}</div><div class="kit-item-desc">${desc}</div></div>`;
+  }).join('') + `</div>`;
+}
+
+// ── STATE ──
+let currentFilter = 'all';
+let currentSearch = '';
+let currentView = 'grid';
+let sortKey = 'hp';
+let sortDir = -1;
+
+function filtered() {
+  return UNITS.filter(u => {
+    const q = currentSearch.toLowerCase().trim();
+    const kitText = (UNIT_KITS[u.name] || []).map(entry => Array.isArray(entry) ? entry.join(' ') : String(entry)).join(' ').toLowerCase();
+    const matchSearch = !q || u.name.toLowerCase().includes(q) || u.role.toLowerCase().includes(q) || u.element.toLowerCase().includes(q) || kitText.includes(q);
+    let matchFilter = true;
+    if (currentFilter !== 'all') {
+      if (['phys','mgc','mix','tank','sup'].includes(currentFilter)) {
+        matchFilter = u.type === currentFilter;
+      } else {
+        matchFilter = u.element === currentFilter;
+      }
+    }
+    return matchSearch && matchFilter;
+  });
+}
+
+function sorted(arr) {
+  return [...arr].sort((a,b) => {
+    let va, vb;
+    if (sortKey === 'name') { va = a.name; vb = b.name; return sortDir * (va > vb ? 1 : -1); }
+    if (sortKey === 'dps')  { va = estDmg(a); vb = estDmg(b); }
+    else { va = a[sortKey]; vb = b[sortKey]; }
+    return sortDir * (va - vb);
+  });
+}
+
+// ── RENDER GRID ──
+function renderGrid() {
+  const data = filtered();
+  const gv = document.getElementById('grid-view');
+  if (data.length === 0) { gv.innerHTML = '<div class="empty-state">No units match your search.</div>'; return; }
+  gv.innerHTML = data.map((u, i) => `
+    <div class="unit-card" data-name="${u.name}" style="animation-delay:${i*0.025}s">
+      <div class="card-img">
+        ${imgEl(u)}
+        <div class="card-gradient"></div>
+      </div>
+      <div class="card-info">
+        <div class="card-name">${u.name}</div>
+        <div class="card-role">${u.role}</div>
+        <div class="card-badges">
+          <span class="badge-element bg-${elClass(u.element)} el-${elClass(u.element)}">${u.element}</span>
+          <span class="badge-type">${TYPE_LABEL[u.type]||u.type}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  gv.querySelectorAll('.unit-card').forEach(el => {
+    el.addEventListener('click', () => openModal(el.dataset.name));
+  });
+}
+
+// ── RENDER LIST ──
+const COLS = [
+  { key:'name', label:'UNIT' },
+  { key:'hp',   label:'HP' },
+  { key:'atk',  label:'ATK' },
+  { key:'mgc',  label:'MGC' },
+  { key:'ar',   label:'AR' },
+  { key:'mr',   label:'MR' },
+  { key:'spd',  label:'SPD' },
+  { key:'dps',  label:'EST.DPS' },
+];
+
+function renderList() {
+  const data = sorted(filtered());
+  const lv = document.getElementById('list-view');
+  if (data.length === 0) { lv.innerHTML = '<div class="empty-state">No units match your search.</div>'; return; }
+
+  const headerHtml = `<div class="list-header">
+    <div class="list-col-head${sortKey==='name'?' sorted':''}" data-key="name">UNIT <span class="sort-arrow">${sortKey==='name'?(sortDir===-1?'↓':'↑'):''}</span></div>
+    <div class="list-col-head" style="pointer-events:none; color:var(--text-dim); font-size:0.6rem;">ROLE / ELEMENT</div>
+    ${['hp','atk','mgc','ar','mr','spd','dps'].map(k=>`
+    <div class="list-col-head${sortKey===k?' sorted':''}" data-key="${k}">${k.toUpperCase()} <span class="sort-arrow">${sortKey===k?(sortDir===-1?'↓':'↑'):''}</span></div>`).join('')}
+  </div>`;
+
+  const rowsHtml = data.map((u, i) => {
+    const dps = estDmg(u);
+    function barCell(val, key) {
+      const p = pct(val, key);
+      const v = val === 0 ? '—' : val;
+      return `<div class="list-cell"><div class="stat-bar-wrap"><span>${v}</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${p}%"></div></div></div></div>`;
+    }
+    return `<div class="list-row" data-name="${u.name}" style="animation-delay:${i*0.02}s">
+      <div class="list-cell">
+        <div class="list-unit-info">
+          <div class="list-thumb">${listImgEl(u)}</div>
+          <div>
+            <div class="list-unit-name">${u.name}</div>
+            <span class="badge-element bg-${elClass(u.element)} el-${elClass(u.element)}" style="font-family:'DM Mono',monospace;font-size:0.6rem;padding:1px 5px;border-radius:3px;">${u.element}</span>
+          </div>
+        </div>
+      </div>
+      <div class="list-cell" style="font-size:0.7rem;color:var(--text-muted);">${u.role}</div>
+      ${barCell(u.hp, 'hp')}
+      ${barCell(u.atk, 'atk')}
+      ${barCell(u.mgc, 'mgc')}
+      ${barCell(u.ar, 'ar')}
+      ${barCell(u.mr, 'mr')}
+      ${barCell(u.spd, 'spd')}
+      <div class="list-cell" style="justify-content:flex-end;font-family:'DM Mono',monospace;font-size:0.75rem;font-weight:500;color:var(--text);">${dps}</div>
+    </div>`;
+  }).join('');
+
+  lv.innerHTML = headerHtml + rowsHtml;
+  lv.querySelectorAll('[data-key]').forEach(el => {
+    el.addEventListener('click', () => {
+      const k = el.dataset.key;
+      if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = -1; }
+      renderList();
+    });
+  });
+  lv.querySelectorAll('.list-row').forEach(el => {
+    el.addEventListener('click', () => openModal(el.dataset.name));
+  });
+}
+
+// ── RENDER META ──
+function renderMeta() {
+  const n = filtered().length;
+  document.getElementById('results-meta').innerHTML = `SHOWING <span>${n}</span> OF <span>${UNITS.length}</span> UNITS · LOCAL HTML READY`;
+}
+
+// ── OPEN MODAL ──
+function openModal(name) {
+  const u = UNITS.find(x => x.name === name);
+  if (!u) return;
+  const el = u.element;
+  const ec = elClass(el);
+  const initials = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const imgSrc = buildImgUrl(u.img);
+  const dps = estDmg(u);
+
+  const statBars = [
+    { key:'hp',  label:'HP',  val:u.hp,  color:'#60a5fa' },
+    { key:'atk', label:'ATK', val:u.atk, color:'#fb923c' },
+    { key:'mgc', label:'MGC', val:u.mgc, color:'#c084fc' },
+    { key:'ar',  label:'AR',  val:u.ar,  color:'#34d399' },
+    { key:'mr',  label:'MR',  val:u.mr,  color:'#818cf8' },
+    { key:'spd', label:'SPD', val:u.spd, color:'#facc15' },
+  ].map(s => `
+    <div class="stat-row-bar">
+      <div class="stat-row-label">${s.label}</div>
+      <div class="stat-row-track"><div class="stat-row-fill" style="width:0%;background:${s.color}" data-pct="${pct(s.val,s.key)}"></div></div>
+      <div class="stat-row-num">${s.val || '—'}</div>
+    </div>`).join('');
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-hero">
+      <div class="modal-hero-img">
+        <img src="${imgSrc}" alt="${u.name}" onerror="this.parentElement.innerHTML='<div class=\\'modal-hero-img-placeholder\\'>${initials}</div>'">
+      </div>
+      <div class="modal-hero-content">
+        <div class="modal-element-line el-${ec}">${el.toUpperCase()} ELEMENT</div>
+        <div class="modal-name">${u.name}</div>
+        <div class="modal-role">${u.role}</div>
+        <div class="modal-tags">
+          <span class="modal-tag bg-${ec} el-${ec}">${el}</span>
+          <span class="modal-tag" style="background:rgba(255,255,255,0.06);color:var(--text-muted);">${TYPE_LABEL[u.type]}</span>
+          <span class="modal-tag" style="background:rgba(255,255,255,0.06);color:var(--text-muted);">${u.pos}</span>
+          ${u.name === 'Wabbit' || u.name === 'Wargrass' ? `<span class="modal-tag" style="background:rgba(200,255,0,0.1);color:var(--accent);">4th Slot</span>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div class="section-label">FINAL STATS (BASE × 1.5)</div>
+      <div class="stats-grid">
+        <div class="stat-block"><div class="stat-block-label">HP</div><div class="stat-block-val">${u.hp.toLocaleString()}</div><div class="stat-block-base">${baseVal(u.hp)}</div></div>
+        <div class="stat-block"><div class="stat-block-label">ATK</div><div class="stat-block-val">${u.atk || '—'}</div><div class="stat-block-base">${u.atk ? baseVal(u.atk) : '—'}</div></div>
+        <div class="stat-block"><div class="stat-block-label">MGC</div><div class="stat-block-val">${u.mgc || '—'}</div><div class="stat-block-base">${u.mgc ? baseVal(u.mgc) : '—'}</div></div>
+        <div class="stat-block"><div class="stat-block-label">AR</div><div class="stat-block-val">${u.ar}</div><div class="stat-block-base">${baseVal(u.ar)}</div></div>
+        <div class="stat-block"><div class="stat-block-label">MR</div><div class="stat-block-val">${u.mr}</div><div class="stat-block-base">${baseVal(u.mr)}</div></div>
+        <div class="stat-block"><div class="stat-block-label">SPD</div><div class="stat-block-val">${u.spd}</div><div class="stat-block-base">${baseVal(u.spd)}</div></div>
+      </div>
+
+      <div class="stat-bars-section">${statBars}</div>
+
+      <div class="section-label">ELEMENT</div>
+      <div class="element-box bg-${ec}">
+        <div class="element-icon icon-${ec}">${el.slice(0,2).toUpperCase()}</div>
+        <div>
+          <div class="element-name-label el-${ec}">${el}</div>
+          <div class="element-desc">${ELEMENT_DATA[el].effect}</div>
+        </div>
+      </div>
+
+      <div class="section-label">COMBAT ESTIMATE</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem;">
+        <div class="stat-block" style="flex:1;min-width:120px;">
+          <div class="stat-block-label">EST. BASE DPS</div>
+          <div class="stat-block-val" style="font-size:1.3rem;color:var(--accent)">${dps}</div>
+          <div class="stat-block-base">vs avg enemy def 530</div>
+        </div>
+        <div class="stat-block" style="flex:1;min-width:120px;">
+          <div class="stat-block-label">DAMAGE TYPE</div>
+          <div class="stat-block-val" style="font-size:0.9rem;">${u.atk > u.mgc ? 'Physical' : u.mgc > u.atk ? 'Magical' : 'Mixed'}</div>
+          <div class="stat-block-base">primary offense</div>
+        </div>
+        <div class="stat-block" style="flex:1;min-width:120px;">
+          <div class="stat-block-label">POSITION</div>
+          <div class="stat-block-val" style="font-size:0.9rem;">${u.pos}</div>
+          <div class="stat-block-base">preferred slot</div>
+        </div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text-dim);line-height:1.5;font-family:'DM Mono',monospace;">
+        Formula: mult × offense × (offense / (offense + defense + 150)) &nbsp;·&nbsp; Crit base: 1.5×
+      </div>
+
+      <div class="kit-section">
+        <div class="section-label">UNIT KIT</div>
+        ${renderKit(u.name)}
+        <div class="kit-note">Search now matches names, roles, elements, and stored kit text. Image paths are encoded so filenames like GameOver &amp; Neos load correctly from the repo when this file is opened locally.</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modal-overlay').classList.add('open');
+
+  // Animate bars after render
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('.stat-row-fill').forEach(el => {
+        el.style.width = el.dataset.pct + '%';
+      });
+    }, 80);
+  });
+}
+
+// ── CONTROLS ──
+document.getElementById('search').addEventListener('input', e => {
+  currentSearch = e.target.value;
+  render();
+});
+
+document.getElementById('filter-pills').addEventListener('click', e => {
+  const pill = e.target.closest('.pill');
+  if (!pill) return;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  currentFilter = pill.dataset.filter;
+  render();
+});
+
+document.getElementById('btn-grid').addEventListener('click', () => {
+  currentView = 'grid';
+  document.getElementById('btn-grid').classList.add('active');
+  document.getElementById('btn-list').classList.remove('active');
+  document.getElementById('grid-view').style.display = '';
+  document.getElementById('list-view').style.display = 'none';
+  renderGrid();
+});
+
+document.getElementById('btn-list').addEventListener('click', () => {
+  currentView = 'list';
+  document.getElementById('btn-list').classList.add('active');
+  document.getElementById('btn-grid').classList.remove('active');
+  document.getElementById('list-view').style.display = '';
+  document.getElementById('grid-view').style.display = 'none';
+  renderList();
+});
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('modal-overlay').classList.remove('open');
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('open');
+});
+
+function render() {
+  renderMeta();
+  if (currentView === 'grid') renderGrid();
+  else renderList();
+}
+
+render();
+</script>
+</body>
+</html>
